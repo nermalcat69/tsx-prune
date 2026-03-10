@@ -1,0 +1,62 @@
+{
+  "name": "tsx-prune",
+  "version": "1.0.0",
+  "description": "Analyze and remove unused components, files, imports, and exports in TypeScript/React codebases",
+  "keywords": [
+    "typescript",
+    "react",
+    "tsx",
+    "unused",
+    "dead-code",
+    "tree-shaking",
+    "imports",
+    "exports",
+    "components",
+    "cli",
+    "refactoring"
+  ],
+  "homepage": "https://github.com/graycup/tsx-prune",
+  "bugs": {
+    "url": "https://github.com/graycup/tsx-prune/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/graycup/tsx-prune.git"
+  },
+  "license": "MIT",
+  "author": "tsx-prune contributors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "tsx-prune": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun run build:tsc",
+    "build:tsc": "tsc",
+    "dev": "bun run src/cli.ts",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "bun run build",
+    "start": "node dist/cli.js",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "fast-glob": "^3.3.2",
+    "ts-morph": "^21.0.1",
+    "tsconfig-paths": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "bun": ">=1.0.0"
+  }
+}

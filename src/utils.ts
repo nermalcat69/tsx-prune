@@ -1,0 +1,110 @@
+import * as path from "path";
+import * as fs from "fs";
+
+export function normalizePath(filePath: string): string {
+  return filePath.replace(/\\/g, "/");
+}
+
+export function isAbsolutePath(filePath: string): boolean {
+  return path.isAbsolute(filePath);
+}
+
+export function resolveRelativePath(from: string, to: string): string {
+  const fromDir = path.dirname(from);
+  return normalizePath(path.resolve(fromDir, to));
+}
+
+export function fileExists(filePath: string): boolean {
+  try {
+    return fs.existsSync(filePath);
+  } catch {
+    return false;
+  }
+}
+
+export function readJsonFile<T>(filePath: string): T | null {
+  try {
+    const content = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(content) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function stripExtension(filePath: string): string {
+  return filePath.replace(/\.(ts|tsx|js|jsx|d\.ts)$/, "");
+}
+
+export function ensureExtension(
+  filePath: string,
+  extensions: string[] = [".ts", ".tsx", ".js", ".jsx"]
+): string | null {
+  if (fileExists(filePath)) return filePath;
+
+  for (const ext of extensions) {
+    const withExt = filePath + ext;
+    if (fileExists(withExt)) return withExt;
+  }
+
+  // Try index files
+  for (const ext of extensions) {
+    const indexFile = path.join(filePath, `index${ext}`);
+    if (fileExists(indexFile)) return normalizePath(indexFile);
+  }
+
+  return null;
+}
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+export function getFileSize(filePath: string): number {
+  try {
+    return fs.statSync(filePath).size;
+  } catch {
+    return 0;
+  }
+}
+
+export function plural(count: number, word: string): string {
+  return count === 1 ? `${count} ${word}` : `${count} ${word}s`;
+}
+
+export function deduplicateArray<T>(arr: T[]): T[] {
+  return [...new Set(arr)];
+}
+
+export function sortPaths(paths: string[]): string[] {
+  return [...paths].sort((a, b) => a.localeCompare(b));
+}
+
+export function relativeTo(filePath: string, cwd: string): string {
+  return normalizePath(path.relative(cwd, filePath));
+}
+
+export function isTestFile(filePath: string): boolean {
+  return (
+    /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filePath) ||
+    /\/__tests__\//.test(filePath) ||
+    /\/tests\//.test(filePath)
+  );
+}
+
+export function isStoriesFile(filePath: string): boolean {
+  return /\.stories\.(ts|tsx|js|jsx)$/.test(filePath);
+}
+
+export function isDeclarationFile(filePath: string): boolean {
+  return filePath.endsWith(".d.ts");
+}
+
+export function isSafeToDelete(filePath: string): boolean {
+  if (isTestFile(filePath)) return false;
+  if (isStoriesFile(filePath)) return false;
+  if (isDeclarationFile(filePath)) return false;
+  if (filePath.includes("/.storybook/")) return false;
+  return true;
+}
