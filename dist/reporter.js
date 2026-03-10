@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,7 +41,9 @@ exports.reportCleanResult = reportCleanResult;
 exports.printBanner = printBanner;
 exports.printScanningMessage = printScanningMessage;
 exports.printDone = printDone;
+exports.printDependencyGraph = printDependencyGraph;
 const chalk_1 = __importDefault(require("chalk"));
+const path = __importStar(require("path"));
 const utils_1 = require("./utils");
 function reportAnalysis(result, options) {
     if (options.json) {
@@ -186,5 +221,45 @@ function printDone(dryRun, silent, json = false) {
     else {
         console.log(chalk_1.default.green.bold("\nDone!"));
     }
+}
+/**
+ * Prints a tree-style dependency graph starting from each entry point.
+ * Used by --debug and the `graph` subcommand.
+ */
+function printDependencyGraph(graph, entryPoints, root, silent, json = false) {
+    if (silent)
+        return;
+    if (json) {
+        const obj = {};
+        for (const [file, deps] of graph.dependencies) {
+            obj[path.relative(root, file)] = [...deps].map((d) => path.relative(root, d));
+        }
+        console.log(JSON.stringify({ graph: obj }, null, 2));
+        return;
+    }
+    console.log(chalk_1.default.bold.cyan("\nDependency Graph:"));
+    const visited = new Set();
+    function printNode(filePath, prefix, isLast) {
+        const connector = isLast ? "└─ " : "├─ ";
+        const label = path.relative(root, filePath);
+        console.log(prefix + chalk_1.default.dim(connector) + (visited.has(filePath) ? chalk_1.default.dim(label + " (↩)") : chalk_1.default.white(label)));
+        if (visited.has(filePath))
+            return;
+        visited.add(filePath);
+        const deps = [...(graph.dependencies.get(filePath) ?? [])].sort();
+        for (let i = 0; i < deps.length; i++) {
+            const childLast = i === deps.length - 1;
+            const childPrefix = prefix + (isLast ? "   " : "│  ");
+            printNode(deps[i], childPrefix, childLast);
+        }
+    }
+    if (entryPoints.length === 0) {
+        console.log(chalk_1.default.yellow("  No entry points found."));
+        return;
+    }
+    for (let i = 0; i < entryPoints.length; i++) {
+        printNode(entryPoints[i], "", i === entryPoints.length - 1);
+    }
+    console.log();
 }
 //# sourceMappingURL=reporter.js.map

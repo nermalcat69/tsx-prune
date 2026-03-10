@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.mergeConfig = exports.loadConfigFile = exports.getDefaultConfig = exports.reportCleanResult = exports.reportAnalysis = exports.clean = exports.buildGraphFromFileInfos = exports.getUnreachableFiles = exports.getReachableFiles = exports.addEdge = exports.createGraph = exports.ImportResolver = exports.resolveEntryPoints = exports.scanFiles = exports.Parser = exports.analyze = void 0;
+exports.mergeConfig = exports.loadConfigFile = exports.getDefaultConfig = exports.printDependencyGraph = exports.reportCleanResult = exports.reportAnalysis = exports.clean = exports.buildGraphFromFileInfos = exports.getUnreachableFiles = exports.getReachableFiles = exports.addEdge = exports.createGraph = exports.ImportResolver = exports.resolveEntryPoints = exports.scanFiles = exports.Parser = exports.analyze = void 0;
 var analyzer_1 = require("./analyzer");
 Object.defineProperty(exports, "analyze", { enumerable: true, get: function () { return analyzer_1.analyze; } });
 var parser_1 = require("./parser");
@@ -21,6 +21,7 @@ Object.defineProperty(exports, "clean", { enumerable: true, get: function () { r
 var reporter_1 = require("./reporter");
 Object.defineProperty(exports, "reportAnalysis", { enumerable: true, get: function () { return reporter_1.reportAnalysis; } });
 Object.defineProperty(exports, "reportCleanResult", { enumerable: true, get: function () { return reporter_1.reportCleanResult; } });
+Object.defineProperty(exports, "printDependencyGraph", { enumerable: true, get: function () { return reporter_1.printDependencyGraph; } });
 var config_1 = require("./config");
 Object.defineProperty(exports, "getDefaultConfig", { enumerable: true, get: function () { return config_1.getDefaultConfig; } });
 Object.defineProperty(exports, "loadConfigFile", { enumerable: true, get: function () { return config_1.loadConfigFile; } });

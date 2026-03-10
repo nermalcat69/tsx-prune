@@ -92,10 +92,16 @@ function buildGraphFromFileInfos(fileInfos) {
     const graph = createGraph();
     for (const [filePath, info] of fileInfos) {
         addFile(graph, filePath);
+        // Static and dynamic imports
         for (const imp of info.imports) {
-            if (imp.isDynamic || !imp.resolvedPath)
+            if (!imp.resolvedPath)
                 continue;
             addEdge(graph, filePath, imp.resolvedPath);
+        }
+        // Re-export edges: `export * from "./Button"` / `export { X } from "./Button"`
+        // These make barrel files transparently propagate reachability.
+        for (const reExportPath of info.reExportEdges ?? []) {
+            addEdge(graph, filePath, reExportPath);
         }
     }
     return graph;

@@ -27,6 +27,12 @@ export interface FileInfo {
     hasComponents: boolean;
     /** Whether this file is a React component file */
     isComponentFile: boolean;
+    /**
+     * Resolved absolute paths of re-export sources.
+     * e.g. `export * from "./Button"` adds Button's resolved path here.
+     * Used to build graph edges so barrel files don't cut the reachability chain.
+     */
+    reExportEdges: string[];
 }
 export interface ImportInfo {
     /** The module specifier (e.g. "./Button", "react") */

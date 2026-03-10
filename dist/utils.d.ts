@@ -14,5 +14,6 @@ export declare function relativeTo(filePath: string, cwd: string): string;
 export declare function isTestFile(filePath: string): boolean;
 export declare function isStoriesFile(filePath: string): boolean;
 export declare function isDeclarationFile(filePath: string): boolean;
+export declare function isNextjsFrameworkFile(filePath: string): boolean;
 export declare function isSafeToDelete(filePath: string): boolean;
 //# sourceMappingURL=utils.d.ts.map

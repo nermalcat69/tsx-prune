@@ -18,6 +18,7 @@ export declare class ImportResolver {
     private matchesPathAlias;
     private resolvePathAlias;
     private tryResolveFromBase;
+    private tryResolveFromRoot;
     private pathPatternToRegex;
     private tryWithExtensions;
 }

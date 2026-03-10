@@ -63,6 +63,7 @@ export class Parser {
     const exports = this.extractExports(sourceFile);
     const jsxUsages = this.extractJsxUsages(sourceFile);
     const hasComponents = this.detectComponents(sourceFile);
+    const reExportEdges = this.extractReExportEdges(sourceFile, filePath);
 
     return {
       path: filePath,
@@ -72,7 +73,33 @@ export class Parser {
       hasComponents,
       isComponentFile:
         filePath.endsWith(".tsx") || filePath.endsWith(".jsx"),
+      reExportEdges,
     };
+  }
+
+  /**
+   * Resolves the source file of every re-export declaration, e.g.:
+   *   export * from "./Button"
+   *   export { Button } from "./Button"
+   * Returns absolute paths so the graph builder can create edges.
+   */
+  private extractReExportEdges(
+    sourceFile: SourceFile,
+    fromFile: string
+  ): string[] {
+    const edges: string[] = [];
+
+    for (const exportDecl of sourceFile.getExportDeclarations()) {
+      const specifier = exportDecl.getModuleSpecifierValue();
+      if (!specifier) continue;
+
+      const resolved = this.resolver.resolve(specifier, fromFile);
+      if (resolved) {
+        edges.push(normalizePath(resolved));
+      }
+    }
+
+    return edges;
   }
 
   private extractImports(
@@ -106,9 +133,10 @@ export class Parser {
           .asKind(SyntaxKind.StringLiteral)!
           .getLiteralValue();
 
+        const dynamicResolved = this.resolver.resolve(specifier, fromFile);
         imports.push({
           moduleSpecifier: specifier,
-          resolvedPath: null, // Don't resolve dynamic imports
+          resolvedPath: dynamicResolved ? normalizePath(dynamicResolved) : null,
           namedImports: [],
           defaultImport: null,
           namespaceImport: null,

@@ -74,6 +74,7 @@ class Parser {
         const exports = this.extractExports(sourceFile);
         const jsxUsages = this.extractJsxUsages(sourceFile);
         const hasComponents = this.detectComponents(sourceFile);
+        const reExportEdges = this.extractReExportEdges(sourceFile, filePath);
         return {
             path: filePath,
             imports,
@@ -81,7 +82,27 @@ class Parser {
             jsxUsages,
             hasComponents,
             isComponentFile: filePath.endsWith(".tsx") || filePath.endsWith(".jsx"),
+            reExportEdges,
         };
+    }
+    /**
+     * Resolves the source file of every re-export declaration, e.g.:
+     *   export * from "./Button"
+     *   export { Button } from "./Button"
+     * Returns absolute paths so the graph builder can create edges.
+     */
+    extractReExportEdges(sourceFile, fromFile) {
+        const edges = [];
+        for (const exportDecl of sourceFile.getExportDeclarations()) {
+            const specifier = exportDecl.getModuleSpecifierValue();
+            if (!specifier)
+                continue;
+            const resolved = this.resolver.resolve(specifier, fromFile);
+            if (resolved) {
+                edges.push((0, utils_1.normalizePath)(resolved));
+            }
+        }
+        return edges;
     }
     extractImports(sourceFile, fromFile) {
         const imports = [];
@@ -109,9 +130,10 @@ class Parser {
                 const specifier = firstArg
                     .asKind(ts_morph_1.SyntaxKind.StringLiteral)
                     .getLiteralValue();
+                const dynamicResolved = this.resolver.resolve(specifier, fromFile);
                 imports.push({
                     moduleSpecifier: specifier,
-                    resolvedPath: null, // Don't resolve dynamic imports
+                    resolvedPath: dynamicResolved ? (0, utils_1.normalizePath)(dynamicResolved) : null,
                     namedImports: [],
                     defaultImport: null,
                     namespaceImport: null,

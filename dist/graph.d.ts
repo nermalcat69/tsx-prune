@@ -17,5 +17,6 @@ export declare function buildGraphFromFileInfos(fileInfos: Map<string, {
         resolvedPath: string | null;
         isDynamic: boolean;
     }[];
+    reExportEdges?: string[];
 }>): DependencyGraph;
 //# sourceMappingURL=graph.d.ts.map

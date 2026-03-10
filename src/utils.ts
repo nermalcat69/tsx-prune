@@ -101,10 +101,40 @@ export function isDeclarationFile(filePath: string): boolean {
   return filePath.endsWith(".d.ts");
 }
 
+/**
+ * Next.js framework entry-point files that must never be treated as unused.
+ * These are loaded by the framework, not imported by user code.
+ */
+const NEXTJS_PROTECTED_PATTERNS = [
+  // Configuration
+  /next\.config\.(js|ts|mjs|cjs)$/,
+  // Middleware
+  /middleware\.(ts|js)$/,
+  // App Router layouts / pages / special files
+  /app\/layout\.(tsx|ts|jsx|js)$/,
+  /app\/page\.(tsx|ts|jsx|js)$/,
+  /app\/loading\.(tsx|ts|jsx|js)$/,
+  /app\/error\.(tsx|ts|jsx|js)$/,
+  /app\/not-found\.(tsx|ts|jsx|js)$/,
+  /app\/template\.(tsx|ts|jsx|js)$/,
+  /app\/global-error\.(tsx|ts|jsx|js)$/,
+  // Pages Router special files
+  /pages\/_app\.(tsx|ts|jsx|js)$/,
+  /pages\/_document\.(tsx|ts|jsx|js)$/,
+  /pages\/_error\.(tsx|ts|jsx|js)$/,
+  // API routes (all files under pages/api/)
+  /pages\/api\//,
+];
+
+export function isNextjsFrameworkFile(filePath: string): boolean {
+  return NEXTJS_PROTECTED_PATTERNS.some((pattern) => pattern.test(filePath));
+}
+
 export function isSafeToDelete(filePath: string): boolean {
   if (isTestFile(filePath)) return false;
   if (isStoriesFile(filePath)) return false;
   if (isDeclarationFile(filePath)) return false;
   if (filePath.includes("/.storybook/")) return false;
+  if (isNextjsFrameworkFile(filePath)) return false;
   return true;
 }

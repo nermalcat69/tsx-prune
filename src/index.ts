@@ -10,7 +10,7 @@ export {
   buildGraphFromFileInfos,
 } from "./graph";
 export { clean } from "./cleaner";
-export { reportAnalysis, reportCleanResult } from "./reporter";
+export { reportAnalysis, reportCleanResult, printDependencyGraph } from "./reporter";
 export { getDefaultConfig, loadConfigFile, mergeConfig } from "./config";
 
 export type {

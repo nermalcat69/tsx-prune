@@ -100,6 +100,10 @@ class ImportResolver {
             if (baseResolved)
                 return false;
         }
+        // Check if it resolves to a local file relative to root
+        const rootResolved = this.tryResolveFromRoot(specifier);
+        if (rootResolved)
+            return false;
         // Otherwise it's an external (node_modules) module
         return true;
     }
@@ -119,7 +123,8 @@ class ImportResolver {
             if (baseResolved)
                 return baseResolved;
         }
-        return null;
+        // Fall back to root-relative resolution (e.g. "ui/button" → "<root>/ui/button.tsx")
+        return this.tryResolveFromRoot(specifier);
     }
     matchesPathAlias(specifier) {
         for (const pattern of Object.keys(this.paths)) {
@@ -151,6 +156,10 @@ class ImportResolver {
         if (!this.baseUrl)
             return null;
         const absPath = (0, utils_1.normalizePath)(path.resolve(this.baseUrl, specifier));
+        return this.tryWithExtensions(absPath);
+    }
+    tryResolveFromRoot(specifier) {
+        const absPath = (0, utils_1.normalizePath)(path.resolve(this.root, specifier));
         return this.tryWithExtensions(absPath);
     }
     pathPatternToRegex(pattern) {

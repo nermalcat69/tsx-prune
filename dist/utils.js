@@ -49,6 +49,7 @@ exports.relativeTo = relativeTo;
 exports.isTestFile = isTestFile;
 exports.isStoriesFile = isStoriesFile;
 exports.isDeclarationFile = isDeclarationFile;
+exports.isNextjsFrameworkFile = isNextjsFrameworkFile;
 exports.isSafeToDelete = isSafeToDelete;
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
@@ -136,6 +137,33 @@ function isStoriesFile(filePath) {
 function isDeclarationFile(filePath) {
     return filePath.endsWith(".d.ts");
 }
+/**
+ * Next.js framework entry-point files that must never be treated as unused.
+ * These are loaded by the framework, not imported by user code.
+ */
+const NEXTJS_PROTECTED_PATTERNS = [
+    // Configuration
+    /next\.config\.(js|ts|mjs|cjs)$/,
+    // Middleware
+    /middleware\.(ts|js)$/,
+    // App Router layouts / pages / special files
+    /app\/layout\.(tsx|ts|jsx|js)$/,
+    /app\/page\.(tsx|ts|jsx|js)$/,
+    /app\/loading\.(tsx|ts|jsx|js)$/,
+    /app\/error\.(tsx|ts|jsx|js)$/,
+    /app\/not-found\.(tsx|ts|jsx|js)$/,
+    /app\/template\.(tsx|ts|jsx|js)$/,
+    /app\/global-error\.(tsx|ts|jsx|js)$/,
+    // Pages Router special files
+    /pages\/_app\.(tsx|ts|jsx|js)$/,
+    /pages\/_document\.(tsx|ts|jsx|js)$/,
+    /pages\/_error\.(tsx|ts|jsx|js)$/,
+    // API routes (all files under pages/api/)
+    /pages\/api\//,
+];
+function isNextjsFrameworkFile(filePath) {
+    return NEXTJS_PROTECTED_PATTERNS.some((pattern) => pattern.test(filePath));
+}
 function isSafeToDelete(filePath) {
     if (isTestFile(filePath))
         return false;
@@ -144,6 +172,8 @@ function isSafeToDelete(filePath) {
     if (isDeclarationFile(filePath))
         return false;
     if (filePath.includes("/.storybook/"))
+        return false;
+    if (isNextjsFrameworkFile(filePath))
         return false;
     return true;
 }

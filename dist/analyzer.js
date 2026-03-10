@@ -106,37 +106,16 @@ function buildImportedNamesMap(fileInfos) {
     }
     return map;
 }
-function findUnusedImports(fileInfos) {
-    const unusedImports = [];
-    // We need per-file identifier usage sets
-    // For now we collect identifier usages from jsxUsages + export names
-    // A more complete approach requires the raw SourceFile — done in cleaner.ts
-    // Here we do a heuristic: check named imports against JSX usages and exports
-    for (const [filePath, info] of fileInfos) {
-        // Build a rough set of used names in the file (via JSX usages + exports referencing names)
-        // The proper check is done when --fix-imports is requested via the cleaner
-        const jsxUsed = new Set(info.jsxUsages);
-        for (const imp of info.imports) {
-            if (imp.isDynamic || imp.isSideEffect)
-                continue;
-            for (const name of imp.namedImports) {
-                // If a named import is only used as JSX and we can detect it's not used — flag it
-                // This is a conservative check — we only flag names that appear in neither JSX nor exports
-                // The full AST-level check is done in cleanUnusedImports
-                if (!jsxUsed.has(name)) {
-                    unusedImports.push({
-                        file: filePath,
-                        name,
-                        moduleSpecifier: imp.moduleSpecifier,
-                    });
-                }
-            }
-        }
-    }
-    return unusedImports.sort((a, b) => a.file !== b.file ? a.file.localeCompare(b.file) : a.name.localeCompare(b.name));
+function findUnusedImports(_fileInfos) {
+    // Accurate unused-import detection requires full AST identifier analysis,
+    // which is done by cleanImportsInFile() in cleaner.ts when --fix-imports is
+    // passed. The previous heuristic (checking against jsxUsages only) produced
+    // massive false positives for any non-JSX usage of a named import.
+    // Return an empty list here; the cleaner handles the real removal.
+    return [];
 }
 function findUnusedComponents(fileInfos, unusedExports) {
-    // React components that are exported but never used in JSX anywhere
+    // Collect every component name used in JSX across all files.
     const allJsxUsages = new Set();
     for (const info of fileInfos.values()) {
         for (const usage of info.jsxUsages) {
@@ -144,6 +123,11 @@ function findUnusedComponents(fileInfos, unusedExports) {
         }
     }
     const unusedComponents = [];
+    // Only report a component as unused when ALL of the following are true:
+    //  1. Its export is already flagged as an unused export (not imported anywhere).
+    //  2. Its name does not appear in JSX anywhere in the codebase.
+    // This avoids false positives on exported utility classes or components that
+    // are used via JSX even if their direct import chain looks broken.
     for (const exp of unusedExports) {
         if (!exp.isComponent)
             continue;
@@ -153,21 +137,6 @@ function findUnusedComponents(fileInfos, unusedExports) {
             file: exp.file,
             name: exp.name,
         });
-    }
-    // Also check component exports from reachable files not in JSX
-    for (const [filePath, info] of fileInfos) {
-        for (const exp of info.exports) {
-            if (!exp.isComponent)
-                continue;
-            if (exp.isReExport)
-                continue;
-            if (!allJsxUsages.has(exp.name)) {
-                const alreadyAdded = unusedComponents.some((c) => c.file === filePath && c.name === exp.name);
-                if (!alreadyAdded) {
-                    unusedComponents.push({ file: filePath, name: exp.name });
-                }
-            }
-        }
     }
     return unusedComponents.sort((a, b) => a.file !== b.file ? a.file.localeCompare(b.file) : a.name.localeCompare(b.name));
 }

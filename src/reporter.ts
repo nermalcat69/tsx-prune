@@ -1,7 +1,9 @@
 import chalk from "chalk";
+import * as path from "path";
 import {
   AnalysisResult,
   CleanResult,
+  DependencyGraph,
   ReportOptions,
   UnusedExport,
   UnusedImport,
@@ -254,4 +256,58 @@ export function printDone(dryRun: boolean, silent: boolean, json = false): void 
   } else {
     console.log(chalk.green.bold("\nDone!"));
   }
+}
+
+/**
+ * Prints a tree-style dependency graph starting from each entry point.
+ * Used by --debug and the `graph` subcommand.
+ */
+export function printDependencyGraph(
+  graph: DependencyGraph,
+  entryPoints: string[],
+  root: string,
+  silent: boolean,
+  json = false
+): void {
+  if (silent) return;
+
+  if (json) {
+    const obj: Record<string, string[]> = {};
+    for (const [file, deps] of graph.dependencies) {
+      obj[path.relative(root, file)] = [...deps].map((d) => path.relative(root, d));
+    }
+    console.log(JSON.stringify({ graph: obj }, null, 2));
+    return;
+  }
+
+  console.log(chalk.bold.cyan("\nDependency Graph:"));
+
+  const visited = new Set<string>();
+
+  function printNode(filePath: string, prefix: string, isLast: boolean): void {
+    const connector = isLast ? "└─ " : "├─ ";
+    const label = path.relative(root, filePath);
+    console.log(prefix + chalk.dim(connector) + (visited.has(filePath) ? chalk.dim(label + " (↩)") : chalk.white(label)));
+
+    if (visited.has(filePath)) return;
+    visited.add(filePath);
+
+    const deps = [...(graph.dependencies.get(filePath) ?? [])].sort();
+    for (let i = 0; i < deps.length; i++) {
+      const childLast = i === deps.length - 1;
+      const childPrefix = prefix + (isLast ? "   " : "│  ");
+      printNode(deps[i], childPrefix, childLast);
+    }
+  }
+
+  if (entryPoints.length === 0) {
+    console.log(chalk.yellow("  No entry points found."));
+    return;
+  }
+
+  for (let i = 0; i < entryPoints.length; i++) {
+    printNode(entryPoints[i], "", i === entryPoints.length - 1);
+  }
+
+  console.log();
 }
